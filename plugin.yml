@@ -1,0 +1,7 @@
+name: DiscordCommandLogger
+main: Phoenix4041\DiscordCommandLogger\Main
+version: 1.0.0
+api: 5.0.0
+author: Phoenix
+description: Logs all executed commands to Discord webhook
+website: https://github.com/Phoenix4041
