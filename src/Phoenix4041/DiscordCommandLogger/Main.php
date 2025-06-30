@@ -53,9 +53,7 @@ class Main extends PluginBase implements Listener {
         $defaultConfig = [
             "webhook-url" => "",
             "log-player-commands" => true,
-            "log-console-commands" => true,
-            "embed-color-player" => 65280,
-            "embed-color-console" => 16711680
+            "log-console-commands" => true
         ];
         
         $configFile = $this->getDataFolder() . "config.yml";
@@ -97,49 +95,14 @@ class Main extends PluginBase implements Listener {
      * Send command information to Discord webhook
      */
     private function sendToDiscord(string $executor, string $command, string $type): void {
-        $timestamp = date("Y-m-d H:i:s");
-        $timezone = date_default_timezone_get();
+        $timestamp = date("F j, Y, g:i a");
         
-        // Create embed data
-        $playerColor = $this->config->get("embed-color-player", 65280);
-        $consoleColor = $this->config->get("embed-color-console", 16711680);
+        // Create simple text message
+        $message = "{$timestamp} COMMAND: `{$command}` was sent by **{$executor}**";
         
-        $embed = [
-            "title" => "🔧 Command Executed",
-            "color" => $type === "Console Command" ? $consoleColor : $playerColor,
-            "fields" => [
-                [
-                    "name" => "👤 Executor",
-                    "value" => $executor,
-                    "inline" => true
-                ],
-                [
-                    "name" => "⚡ Command",
-                    "value" => "```" . $command . "```",
-                    "inline" => false
-                ],
-                [
-                    "name" => "🕐 Time",
-                    "value" => $timestamp . " (" . $timezone . ")",
-                    "inline" => true
-                ],
-                [
-                    "name" => "📍 Type",
-                    "value" => $type,
-                    "inline" => true
-                ]
-            ],
-            "footer" => [
-                "text" => "Server: " . $this->getServer()->getMotd(),
-                "icon_url" => "https://cdn.discordapp.com/attachments/123456789/123456789/minecraft_icon.png"
-            ],
-            "timestamp" => date("c")
-        ];
-
         $data = [
             "username" => "Command Logger",
-            "avatar_url" => "https://cdn.discordapp.com/attachments/123456789/123456789/bot_avatar.png",
-            "embeds" => [$embed]
+            "content" => $message
         ];
 
         // Send webhook asynchronously
