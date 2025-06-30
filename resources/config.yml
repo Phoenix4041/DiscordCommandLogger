@@ -1,0 +1,17 @@
+# Discord Command Logger Configuration
+# Plugin by Phoenix - https://github.com/Phoenix4041
+
+# Discord Webhook URL
+# Get this from your Discord server settings > Integrations > Webhooks
+webhook-url: "https://discord.com/api/webhooks/YOUR_WEBHOOK_ID/YOUR_WEBHOOK_TOKEN"
+
+# Additional settings
+settings:
+  # Log console commands (true/false)
+  log-console-commands: true
+  
+  # Log player commands (true/false)
+  log-player-commands: true
+  
+  # Timezone for timestamps
+  timezone: "America/New_York"
