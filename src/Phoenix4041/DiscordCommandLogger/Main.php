@@ -6,10 +6,10 @@ namespace Phoenix4041\DiscordCommandLogger;
 
 use pocketmine\plugin\PluginBase;
 use pocketmine\event\Listener;
-use pocketmine\event\player\PlayerCommandPreprocessEvent;
 use pocketmine\event\server\CommandEvent;
 use pocketmine\utils\Config;
 use pocketmine\console\ConsoleCommandSender;
+use pocketmine\player\Player;
 
 class Main extends PluginBase implements Listener {
 
@@ -18,11 +18,22 @@ class Main extends PluginBase implements Listener {
 
     public function onEnable(): void {
         $this->saveDefaultConfig();
+        $this->reloadConfig();
         $this->config = $this->getConfig();
+        
+        // Check if config is properly loaded
+        if ($this->config->getAll() === null || empty($this->config->getAll())) {
+            $this->getLogger()->warning("§eConfig file is empty or corrupted. Creating default configuration...");
+            $this->createDefaultConfig();
+            $this->reloadConfig();
+            $this->config = $this->getConfig();
+        }
+        
         $this->webhookUrl = $this->config->get("webhook-url", "");
         
         if (empty($this->webhookUrl)) {
             $this->getLogger()->error("§cWebhook URL not configured! Please set it in config.yml");
+            $this->getLogger()->info("§eExample: webhook-url: \"https://discord.com/api/webhooks/YOUR_WEBHOOK_ID/YOUR_WEBHOOK_TOKEN\"");
             $this->getServer()->getPluginManager()->disablePlugin($this);
             return;
         }
@@ -36,36 +47,48 @@ class Main extends PluginBase implements Listener {
     }
 
     /**
-     * Handle player commands
+     * Create default configuration if it doesn't exist or is corrupted
      */
-    public function onPlayerCommand(PlayerCommandPreprocessEvent $event): void {
-        $player = $event->getPlayer();
-        $command = $event->getMessage();
+    private function createDefaultConfig(): void {
+        $defaultConfig = [
+            "webhook-url" => "",
+            "log-player-commands" => true,
+            "log-console-commands" => true,
+            "embed-color-player" => 65280,
+            "embed-color-console" => 16711680
+        ];
         
-        // Skip if command starts with / (already handled)
-        if (!str_starts_with($command, "/")) {
-            return;
-        }
-        
-        $this->sendToDiscord(
-            $player->getName(),
-            $command,
-            "Player Command"
-        );
+        $configFile = $this->getDataFolder() . "config.yml";
+        file_put_contents($configFile, yaml_emit($defaultConfig, YAML_UTF8_ENCODING));
+        $this->getLogger()->info("§aDefault configuration created at: " . $configFile);
     }
 
     /**
-     * Handle all commands (including console)
+     * Handle all commands (including player and console)
      */
     public function onServerCommand(CommandEvent $event): void {
         $sender = $event->getSender();
         $command = "/" . $event->getCommand();
         
         if ($sender instanceof ConsoleCommandSender) {
+            if (!$this->config->get("log-console-commands", true)) {
+                return;
+            }
+            
             $this->sendToDiscord(
                 "Console",
                 $command,
                 "Console Command"
+            );
+        } elseif ($sender instanceof Player) {
+            if (!$this->config->get("log-player-commands", true)) {
+                return;
+            }
+            
+            $this->sendToDiscord(
+                $sender->getName(),
+                $command,
+                "Player Command"
             );
         }
     }
@@ -78,9 +101,12 @@ class Main extends PluginBase implements Listener {
         $timezone = date_default_timezone_get();
         
         // Create embed data
+        $playerColor = $this->config->get("embed-color-player", 65280);
+        $consoleColor = $this->config->get("embed-color-console", 16711680);
+        
         $embed = [
             "title" => "🔧 Command Executed",
-            "color" => $type === "Console Command" ? 16711680 : 65280, // Red for console, Green for players
+            "color" => $type === "Console Command" ? $consoleColor : $playerColor,
             "fields" => [
                 [
                     "name" => "👤 Executor",
