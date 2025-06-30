@@ -57,7 +57,7 @@ class Main extends PluginBase implements Listener {
     /**
      * Handle all commands (including console)
      */
-    public function onCommand(CommandEvent $event): void {
+    public function onServerCommand(CommandEvent $event): void {
         $sender = $event->getSender();
         $command = "/" . $event->getCommand();
         
